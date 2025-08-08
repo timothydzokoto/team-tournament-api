@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# VS Code settings
+.vscode/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Pytest cache
+.pytest_cache/
+
+# dotenv environment variables
+.env
+
+# Database files
+*.sqlite3
+
+# Alembic migration files
+alembic.ini
+
+# Redis dump files
+dump.rdb
+
+# OS files
+.DS_Store
+Thumbs.db
