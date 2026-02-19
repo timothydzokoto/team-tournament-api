@@ -13,15 +13,16 @@ def cache_set(key: str, value: Any, expiry: int = 300) -> None:
     """Set a value in cache with expiration"""
     try:
         redis_client.setex(key, expiry, json.dumps(value))
-    except redis.ConnectionError:
-        pass  # Silently fail if Redis is not available
+    except (redis.ConnectionError, TypeError, ValueError):
+        # Silently skip caching when Redis is unavailable or value is not JSON serializable
+        pass
 
 def cache_get(key: str) -> Optional[Any]:
     """Get a value from cache"""
     try:
         data = redis_client.get(key)
         return json.loads(data) if data else None
-    except (redis.ConnectionError, json.JSONDecodeError):
+    except (redis.ConnectionError, json.JSONDecodeError, TypeError, ValueError):
         return None
 
 def cache_delete(key: str) -> None:

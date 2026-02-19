@@ -6,9 +6,19 @@ from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse, Playe
 from app.crud.player import player_crud
 from app.crud.subteam import subteam_crud
 from app.utils.auth import get_current_active_user
+from app.utils.face_recognition import is_face_recognition_available
 from app.utils.file_upload import save_image_file, get_file_url
 
 router = APIRouter(prefix="/players", tags=["players"])
+
+
+def ensure_face_recognition_available() -> None:
+    """Guard face endpoints when optional dependency is not installed."""
+    if not is_face_recognition_available():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Face recognition is unavailable. Install the optional dependency: pip install face-recognition",
+        )
 
 @router.post("/", response_model=PlayerResponse)
 def create_player(
@@ -127,6 +137,8 @@ def upload_player_face(
     current_user = Depends(get_current_active_user)
 ):
     """Upload a face image for a player"""
+    ensure_face_recognition_available()
+
     # Check if player exists
     player = player_crud.get(db, player_id=player_id)
     if not player:
@@ -172,6 +184,8 @@ def match_player_face(
     current_user = Depends(get_current_active_user)
 ):
     """Match a face image against stored player faces"""
+    ensure_face_recognition_available()
+
     # Read file bytes
     file_bytes = file.file.read()
     

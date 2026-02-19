@@ -18,6 +18,9 @@ dist/
 *.egg-info/
 .eggs/
 
+# uploaded images
+uploads/
+
 # Pytest cache
 .pytest_cache/
 

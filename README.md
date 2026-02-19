@@ -1,143 +1,120 @@
-# 🏆 Team Tournament API
+# Team Tournament API
 
-A comprehensive FastAPI-based REST API for managing teams, subteams, and players with advanced features including face recognition, Redis caching, and JWT authentication.
+FastAPI REST API for managing teams, subteams, players, and users, with JWT authentication, Redis-backed caching utilities, and face recognition for player matching.
 
-## ✨ Features
+## Features
 
-- **Team & Subteam Management**: Complete CRUD operations for teams and subteams
-- **Player Management**: Comprehensive player profiles with face recognition
-- **Face Recognition**: Upload and match player faces using AI
-- **JWT Authentication**: Secure user authentication and authorization
-- **Redis Caching**: High-performance caching for improved response times
-- **File Uploads**: Image upload support for player faces and team logos
-- **Database Migrations**: Alembic-based schema management
-- **RESTful API**: Well-structured REST endpoints with proper HTTP status codes
-- **Comprehensive Documentation**: Auto-generated API docs with Swagger/ReDoc
+- Team, subteam, player, and user CRUD APIs
+- JWT auth (`register`, `login`, `me`)
+- Face upload and face-match endpoints for players
+- SQLAlchemy models with Alembic migrations
+- Redis cache helpers with graceful fallback when Redis is unavailable
+- Swagger and ReDoc documentation
 
-## 🛠 Tech Stack
+## Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| **API Framework** | FastAPI |
-| **ORM** | SQLAlchemy 2.0 |
-| **Database** | PostgreSQL (production) / SQLite (development) |
-| **Caching** | Redis |
-| **Authentication** | JWT (python-jose + passlib) |
-| **Face Recognition** | face_recognition library |
-| **Migrations** | Alembic |
-| **File Storage** | Local filesystem |
-| **Documentation** | Swagger/ReDoc |
+- FastAPI
+- SQLAlchemy 2.x
+- Alembic
+- PostgreSQL (recommended) or SQLite (default)
+- Redis (optional)
+- `python-jose` + `passlib` for JWT auth
+- `face_recognition` for facial encoding and matching
 
-## 📁 Project Structure
+## Project Structure
 
-```
+```text
 team-tournament-api/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI application
-│   ├── database.py          # Database configuration
-│   ├── cache.py             # Redis caching utilities
-│   ├── models/              # SQLAlchemy models
-│   │   ├── __init__.py
-│   │   ├── team.py
-│   │   ├── subteam.py
-│   │   ├── player.py
-│   │   └── user.py
-│   ├── schemas/             # Pydantic schemas
-│   │   ├── __init__.py
-│   │   ├── team.py
-│   │   ├── subteam.py
-│   │   ├── player.py
-│   │   └── user.py
-│   ├── crud/               # CRUD operations
-│   │   ├── __init__.py
-│   │   ├── team.py
-│   │   ├── subteam.py
-│   │   ├── player.py
-│   │   └── user.py
-│   ├── routers/            # API endpoints
-│   │   ├── __init__.py
-│   │   ├── auth.py
-│   │   ├── teams.py
-│   │   ├── subteams.py
-│   │   ├── players.py
-│   │   └── users.py
-│   └── utils/              # Utility functions
-│       ├── __init__.py
-│       ├── auth.py
-│       ├── face_recognition.py
-│       └── file_upload.py
-├── alembic/                # Database migrations
-├── uploads/                # File uploads
-├── requirements.txt
-├── alembic.ini
-├── Dockerfile
-└── README.md
+|-- app/
+|   |-- main.py
+|   |-- database.py
+|   |-- cache.py
+|   |-- models/
+|   |-- schemas/
+|   |-- crud/
+|   |-- routers/
+|   `-- utils/
+|-- alembic/
+|-- requirements.txt
+|-- alembic.ini
+|-- Dockerfile
+|-- start.py
+|-- startup.sh
+`-- README.md
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
+## Prerequisites
 
 - Python 3.8+
-- Redis (optional, for caching)
-- PostgreSQL (optional, for production)
+- Redis (optional)
+- PostgreSQL (optional, recommended for production)
 
-### Installation
+## Local Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd team-tournament-api
-   ```
+1. Create and activate a virtual environment.
 
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+```bash
+python -m venv venv
+# Linux/macOS
+source venv/bin/activate
+# Windows PowerShell
+venv\Scripts\Activate.ps1
+```
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. Install dependencies.
 
-4. **Set up environment variables**
-   ```bash
-   # Create .env file
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-5. **Initialize database**
-   ```bash
-   # Create initial migration
-   alembic revision --autogenerate -m "Initial migration"
-   
-   # Apply migrations
-   alembic upgrade head
-   ```
+3. Configure environment variables.
 
-6. **Start the server**
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+A local `.env` is already present in this repo. Review and adjust it for your environment.
 
-The API will be available at `http://localhost:8000`
+Example values:
 
-## 📚 API Documentation
+```env
+# Database
+DATABASE_URL=sqlite:///./tournament.db
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tournament
 
-Once the server is running, you can access:
+# Redis (optional)
+REDIS_URL=redis://localhost:6379
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **API Info**: http://localhost:8000/api-info
+# JWT
+SECRET_KEY=change-this-in-production
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-## 🔐 Authentication
+# File Uploads
+UPLOAD_DIR=uploads
+MAX_FILE_SIZE=5242880
+```
 
-The API uses JWT-based authentication. Here's how to use it:
+4. Apply database migrations.
 
-### 1. Register a user
+```bash
+alembic upgrade head
+```
+
+5. Start the API.
+
+```bash
+uvicorn app.main:app --reload
+```
+
+API base URL: `http://localhost:8000`
+
+## API Documentation
+
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+- API info: `http://localhost:8000/api-info`
+- Health check: `http://localhost:8000/health`
+
+## Authentication Flow
+
+1. Register
+
 ```bash
 curl -X POST "http://localhost:8000/api/v1/auth/register" \
   -H "Content-Type: application/json" \
@@ -148,7 +125,8 @@ curl -X POST "http://localhost:8000/api/v1/auth/register" \
   }'
 ```
 
-### 2. Login to get access token
+2. Login
+
 ```bash
 curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
@@ -158,265 +136,96 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
   }'
 ```
 
-### 3. Use the token in subsequent requests
+3. Use token
+
 ```bash
 curl -X GET "http://localhost:8000/api/v1/teams" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-## 🏗 API Endpoints
+## Endpoints
 
-### Authentication
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login and get access token
-- `GET /api/v1/auth/me` - Get current user info
+### Auth
+
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/auth/me`
 
 ### Teams
-- `GET /api/v1/teams` - List all teams
-- `POST /api/v1/teams` - Create new team
-- `GET /api/v1/teams/{team_id}` - Get team by ID
-- `PUT /api/v1/teams/{team_id}` - Update team
-- `DELETE /api/v1/teams/{team_id}` - Delete team
+
+- `GET /api/v1/teams`
+- `POST /api/v1/teams`
+- `GET /api/v1/teams/{team_id}`
+- `PUT /api/v1/teams/{team_id}`
+- `DELETE /api/v1/teams/{team_id}`
 
 ### Subteams
-- `GET /api/v1/subteams` - List all subteams
-- `POST /api/v1/subteams` - Create new subteam
-- `GET /api/v1/subteams/{subteam_id}` - Get subteam by ID
-- `PUT /api/v1/subteams/{subteam_id}` - Update subteam
-- `DELETE /api/v1/subteams/{subteam_id}` - Delete subteam
-- `GET /api/v1/subteams/team/{team_id}` - Get subteams by team
+
+- `GET /api/v1/subteams`
+- `POST /api/v1/subteams`
+- `GET /api/v1/subteams/{subteam_id}`
+- `PUT /api/v1/subteams/{subteam_id}`
+- `DELETE /api/v1/subteams/{subteam_id}`
+- `GET /api/v1/subteams/team/{team_id}`
 
 ### Players
-- `GET /api/v1/players` - List all players
-- `POST /api/v1/players` - Create new player
-- `GET /api/v1/players/{player_id}` - Get player by ID
-- `PUT /api/v1/players/{player_id}` - Update player
-- `DELETE /api/v1/players/{player_id}` - Delete player
-- `GET /api/v1/players/subteam/{subteam_id}` - Get players by subteam
-- `POST /api/v1/players/{player_id}/upload-face` - Upload player face image
-- `POST /api/v1/players/face-match` - Match face against players
 
-### Users (Admin only)
-- `GET /api/v1/users` - List all users
-- `POST /api/v1/users` - Create new user
-- `GET /api/v1/users/{user_id}` - Get user by ID
-- `PUT /api/v1/users/{user_id}` - Update user
-- `DELETE /api/v1/users/{user_id}` - Delete user
+- `GET /api/v1/players`
+- `POST /api/v1/players`
+- `GET /api/v1/players/{player_id}`
+- `PUT /api/v1/players/{player_id}`
+- `DELETE /api/v1/players/{player_id}`
+- `GET /api/v1/players/subteam/{subteam_id}`
+- `POST /api/v1/players/{player_id}/upload-face`
+- `POST /api/v1/players/face-match`
 
-## 🎯 Face Recognition
+### Users (superuser only)
 
-The API includes advanced face recognition capabilities:
+- `GET /api/v1/users`
+- `POST /api/v1/users`
+- `GET /api/v1/users/{user_id}`
+- `PUT /api/v1/users/{user_id}`
+- `DELETE /api/v1/users/{user_id}`
 
-### Upload Player Face
-```bash
-curl -X POST "http://localhost:8000/api/v1/players/1/upload-face" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "file=@player_face.jpg"
-```
+## Face Recognition Notes
 
-### Match Face
-```bash
-curl -X POST "http://localhost:8000/api/v1/players/face-match" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "file=@unknown_face.jpg"
-```
+This project imports `face_recognition` in runtime code. The package is currently commented out in `requirements.txt`, so you need to install it explicitly if face endpoints are used.
 
-## ⚙️ Configuration
-
-### Environment Variables
-
-Create a `.env` file with the following variables:
-
-```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost/tournament
-# or for SQLite: DATABASE_URL=sqlite:///./tournament.db
-
-# Redis (optional)
-REDIS_URL=redis://localhost:6379
-
-# JWT
-SECRET_KEY=your-secret-key-here
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# File Uploads
-UPLOAD_DIR=uploads
-MAX_FILE_SIZE=5242880  # 5MB
-```
-
-## 🐳 Docker Deployment
-
-### Build and run with Docker
+Example:
 
 ```bash
-# Build the image
+pip install face-recognition
+```
+
+Depending on OS, you may also need system-level dependencies (for example `cmake`, `dlib` build tooling).
+
+## Docker
+
+Build and run:
+
+```bash
 docker build -t team-tournament-api .
-
-# Run the container
 docker run -p 8000:8000 team-tournament-api
 ```
 
-### Docker Compose (with Redis and PostgreSQL)
+## Testing
 
-```yaml
-version: '3.8'
-services:
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/tournament
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - db
-      - redis
+- Run tests:
 
-  db:
-    image: postgres:13
-    environment:
-      - POSTGRES_DB=tournament
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:6-alpine
-    ports:
-      - "6379:6379"
-
-volumes:
-  postgres_data:
-```
-
-## 🧪 Testing
-
-### Run tests
 ```bash
 pytest
 ```
 
-### Manual testing with curl
+- Optional manual smoke test script:
+
 ```bash
-# Health check
-curl http://localhost:8000/health
-
-# Register user
-curl -X POST "http://localhost:8000/api/v1/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{"username": "test", "email": "test@example.com", "password": "password"}'
-
-# Login
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"username": "test", "password": "password"}'
+python test_api.py
 ```
 
-## 📊 Performance Features
+## Production Notes
 
-- **Redis Caching**: Automatic caching of GET requests
-- **Database Indexing**: Optimized queries with proper indexes
-- **Pagination**: Efficient handling of large datasets
-- **File Compression**: Optimized image storage
-- **Connection Pooling**: Database connection optimization
-
-## 🔍 Search and Filtering
-
-The API supports advanced search and filtering:
-
-- **Teams**: Search by name
-- **Subteams**: Search by name, filter by team
-- **Players**: Search by name or email, filter by subteam
-- **Pagination**: Limit and offset parameters
-
-## 📈 Data Models
-
-### Team
-- `id`: Primary key
-- `name`: Team name (unique)
-- `description`: Team description
-- `coach_name`: Coach name
-- `logo_url`: Team logo URL
-- `created_at`, `updated_at`: Timestamps
-
-### SubTeam
-- `id`: Primary key
-- `name`: Subteam name
-- `description`: Subteam description
-- `team_id`: Foreign key to Team
-- `created_at`, `updated_at`: Timestamps
-
-### Player
-- `id`: Primary key
-- `first_name`, `last_name`: Player name
-- `email`: Email (unique)
-- `phone`: Phone number
-- `date_of_birth`: Date of birth
-- `height`, `weight`: Physical attributes
-- `position`: Player position
-- `jersey_number`: Jersey number
-- `is_active`: Active status
-- `face_image_url`: Face image URL
-- `face_encoding`: Face recognition encoding
-- `subteam_id`: Foreign key to SubTeam
-- `created_at`, `updated_at`: Timestamps
-
-### User
-- `id`: Primary key
-- `username`: Username (unique)
-- `email`: Email (unique)
-- `hashed_password`: Hashed password
-- `is_active`: Active status
-- `is_superuser`: Superuser status
-- `created_at`, `updated_at`: Timestamps
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-For support and questions:
-
-- Create an issue on GitHub
-- Check the API documentation at `/docs`
-- Review the logs for debugging information
-
-## 🚀 Deployment
-
-### Production Considerations
-
-1. **Security**:
-   - Use strong SECRET_KEY
-   - Enable HTTPS
-   - Configure CORS properly
-   - Use environment variables for secrets
-
-2. **Performance**:
-   - Use PostgreSQL for production
-   - Configure Redis for caching
-   - Set up proper logging
-   - Use a production ASGI server (Gunicorn + Uvicorn)
-
-3. **Monitoring**:
-   - Set up health checks
-   - Monitor database performance
-   - Track API usage and errors
-
-4. **Backup**:
-   - Regular database backups
-   - File upload backups
-   - Configuration backups
-
----
-
-**Built with ❤️ using FastAPI** 
+- Replace `SECRET_KEY` with a strong secret
+- Restrict CORS in `app/main.py`
+- Use PostgreSQL instead of SQLite
+- Run with a production server/process model (for example Gunicorn + Uvicorn workers)
+- Ensure Redis and DB observability/monitoring are configured

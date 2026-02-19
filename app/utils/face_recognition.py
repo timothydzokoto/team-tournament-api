@@ -1,12 +1,21 @@
-import face_recognition
+try:
+    import face_recognition
+except ImportError:  # Optional dependency in this project
+    face_recognition = None
 import numpy as np
 import json
 from typing import List, Optional, Tuple
-from PIL import Image
 import io
+
+
+def is_face_recognition_available() -> bool:
+    """Return whether the optional face_recognition dependency is installed."""
+    return face_recognition is not None
 
 def encode_face(image_path: str) -> Optional[np.ndarray]:
     """Encode a face from an image file"""
+    if face_recognition is None:
+        return None
     try:
         image = face_recognition.load_image_file(image_path)
         encodings = face_recognition.face_encodings(image)
@@ -17,6 +26,8 @@ def encode_face(image_path: str) -> Optional[np.ndarray]:
 
 def encode_face_from_bytes(image_bytes: bytes) -> Optional[np.ndarray]:
     """Encode a face from image bytes"""
+    if face_recognition is None:
+        return None
     try:
         image = face_recognition.load_image_file(io.BytesIO(image_bytes))
         encodings = face_recognition.face_encodings(image)
@@ -27,6 +38,8 @@ def encode_face_from_bytes(image_bytes: bytes) -> Optional[np.ndarray]:
 
 def compare_faces(known_encoding: np.ndarray, unknown_encoding: np.ndarray, tolerance: float = 0.6) -> bool:
     """Compare two face encodings"""
+    if face_recognition is None:
+        return False
     try:
         return face_recognition.compare_faces([known_encoding], unknown_encoding, tolerance=tolerance)[0]
     except Exception as e:
@@ -35,6 +48,8 @@ def compare_faces(known_encoding: np.ndarray, unknown_encoding: np.ndarray, tole
 
 def find_best_match(unknown_encoding: np.ndarray, known_encodings: List[Tuple[int, np.ndarray]], tolerance: float = 0.6) -> Optional[Tuple[int, float]]:
     """Find the best matching face from a list of known encodings"""
+    if face_recognition is None:
+        return None
     if not known_encodings:
         return None
     
