@@ -20,7 +20,7 @@ PLAYERS_DIR.mkdir(exist_ok=True)
 TEAMS_DIR = IMAGES_DIR / "teams"
 TEAMS_DIR.mkdir(exist_ok=True)
 
-def save_image_file(file: UploadFile, subdirectory: str = "players") -> str:
+def save_image_file(file: UploadFile, subdirectory: str = "players", content: Optional[bytes] = None) -> str:
     """Save an uploaded image file and return the file path"""
     try:
         # Validate file type
@@ -42,8 +42,8 @@ def save_image_file(file: UploadFile, subdirectory: str = "players") -> str:
         # Save file
         file_path = save_dir / unique_filename
         with open(file_path, "wb") as buffer:
-            content = file.file.read()
-            buffer.write(content)
+            file_content = content if content is not None else file.file.read()
+            buffer.write(file_content)
         
         return str(file_path)
     

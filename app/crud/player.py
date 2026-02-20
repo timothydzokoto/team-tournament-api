@@ -2,11 +2,19 @@ from sqlalchemy.orm import Session
 from typing import List, Optional, Tuple
 from app.models.player import Player
 from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerFaceMatch
-from app.cache import cache_get, cache_set, cache_delete, cache_clear_pattern
+from app.cache import (
+    cache_get,
+    cache_set,
+    cache_delete,
+    cache_get_namespace_version,
+    cache_bump_namespace_version,
+)
 from app.utils.face_recognition import encode_face_from_bytes, find_best_match, save_face_encoding, load_face_encoding
 import numpy as np
 
 class PlayerCRUD:
+    LIST_NAMESPACE = "players:list"
+
     def create(self, db: Session, player: PlayerCreate) -> Player:
         """Create a new player"""
         db_player = Player(**player.model_dump())
@@ -14,16 +22,17 @@ class PlayerCRUD:
         db.commit()
         db.refresh(db_player)
         
-        # Clear cache
-        cache_clear_pattern("players:*")
+        # Invalidate list cache namespace.
+        cache_bump_namespace_version(self.LIST_NAMESPACE)
         return db_player
     
-    def get(self, db: Session, player_id: int) -> Optional[Player]:
+    def get(self, db: Session, player_id: int, use_cache: bool = True) -> Optional[Player]:
         """Get a player by ID with caching"""
         cache_key = f"player:{player_id}"
-        cached = cache_get(cache_key)
-        if cached:
-            return cached
+        if use_cache:
+            cached = cache_get(cache_key)
+            if isinstance(cached, dict):
+                return Player(**cached)
         
         player = db.query(Player).filter(Player.id == player_id).first()
         if player:
@@ -36,7 +45,15 @@ class PlayerCRUD:
     
     def get_by_subteam(self, db: Session, subteam_id: int) -> List[Player]:
         """Get all players for a subteam"""
-        return db.query(Player).filter(Player.subteam_id == subteam_id).all()
+        version = cache_get_namespace_version(self.LIST_NAMESPACE)
+        cache_key = f"players:list:v{version}:subteam:{subteam_id}"
+        cached = cache_get(cache_key)
+        if isinstance(cached, list):
+            return [Player(**item) for item in cached if isinstance(item, dict)]
+
+        players = db.query(Player).filter(Player.subteam_id == subteam_id).all()
+        cache_set(cache_key, players, 300)
+        return players
     
     def get_multi(
         self, 
@@ -47,6 +64,17 @@ class PlayerCRUD:
         search: Optional[str] = None
     ) -> List[Player]:
         """Get multiple players with optional filtering"""
+        version = cache_get_namespace_version(self.LIST_NAMESPACE)
+        normalized_search = (search or "").strip().lower()
+        normalized_subteam = subteam_id if subteam_id is not None else "all"
+        cache_key = (
+            f"players:list:v{version}:skip:{skip}:limit:{limit}:"
+            f"subteam:{normalized_subteam}:search:{normalized_search}"
+        )
+        cached = cache_get(cache_key)
+        if isinstance(cached, list):
+            return [Player(**item) for item in cached if isinstance(item, dict)]
+
         query = db.query(Player)
         
         if subteam_id:
@@ -59,11 +87,13 @@ class PlayerCRUD:
                 (Player.email.ilike(f"%{search}%"))
             )
         
-        return query.offset(skip).limit(limit).all()
+        players = query.offset(skip).limit(limit).all()
+        cache_set(cache_key, players, 300)
+        return players
     
     def update(self, db: Session, player_id: int, player_update: PlayerUpdate) -> Optional[Player]:
         """Update a player"""
-        db_player = self.get(db, player_id)
+        db_player = self.get(db, player_id, use_cache=False)
         if not db_player:
             return None
         
@@ -76,13 +106,13 @@ class PlayerCRUD:
         
         # Clear cache
         cache_delete(f"player:{player_id}")
-        cache_clear_pattern("players:*")
+        cache_bump_namespace_version(self.LIST_NAMESPACE)
         
         return db_player
     
     def delete(self, db: Session, player_id: int) -> bool:
         """Delete a player"""
-        db_player = self.get(db, player_id)
+        db_player = self.get(db, player_id, use_cache=False)
         if not db_player:
             return False
         
@@ -91,7 +121,7 @@ class PlayerCRUD:
         
         # Clear cache
         cache_delete(f"player:{player_id}")
-        cache_clear_pattern("players:*")
+        cache_bump_namespace_version(self.LIST_NAMESPACE)
         
         return True
     
@@ -121,7 +151,7 @@ class PlayerCRUD:
             return None
         
         player_id, confidence = match_result
-        player = self.get(db, player_id)
+        player = self.get(db, player_id, use_cache=False)
         
         if player:
             return PlayerFaceMatch(
@@ -135,7 +165,7 @@ class PlayerCRUD:
     
     def update_face_encoding(self, db: Session, player_id: int, face_image_bytes: bytes, face_image_url: str) -> Optional[Player]:
         """Update player's face encoding"""
-        db_player = self.get(db, player_id)
+        db_player = self.get(db, player_id, use_cache=False)
         if not db_player:
             return None
         
@@ -155,6 +185,7 @@ class PlayerCRUD:
         
         # Clear cache
         cache_delete(f"player:{player_id}")
+        cache_bump_namespace_version(self.LIST_NAMESPACE)
         
         return db_player
 

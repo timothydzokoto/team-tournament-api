@@ -149,17 +149,14 @@ def upload_player_face(
     
     # Save the image file
     try:
-        file_path = save_image_file(file, "players")
+        file_bytes = file.file.read()
+        file_path = save_image_file(file, "players", content=file_bytes)
         file_url = get_file_url(file_path)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error saving image: {str(e)}"
         )
-    
-    # Read file bytes for face encoding
-    file.file.seek(0)
-    file_bytes = file.file.read()
     
     # Update player with face encoding
     updated_player = player_crud.update_face_encoding(
