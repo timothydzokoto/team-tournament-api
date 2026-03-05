@@ -46,6 +46,29 @@ def create_player(
     
     return player_crud.create(db=db, player=player)
 
+@router.post("/face-match", response_model=PlayerFaceMatch)
+def match_player_face(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    """Match a face image against stored player faces"""
+    ensure_face_recognition_available()
+
+    # Read file bytes
+    file_bytes = file.file.read()
+    
+    # Find matching player
+    match_result = player_crud.find_player_by_face(db=db, face_image_bytes=file_bytes)
+    
+    if not match_result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No matching player found"
+        )
+    
+    return match_result
+
 @router.get("/{player_id}", response_model=PlayerResponse)
 def get_player(
     player_id: int, 
@@ -174,25 +197,3 @@ def upload_player_face(
     
     return {"message": "Face image uploaded successfully", "face_image_url": file_url}
 
-@router.post("/face-match", response_model=PlayerFaceMatch)
-def match_player_face(
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
-):
-    """Match a face image against stored player faces"""
-    ensure_face_recognition_available()
-
-    # Read file bytes
-    file_bytes = file.file.read()
-    
-    # Find matching player
-    match_result = player_crud.find_player_by_face(db=db, face_image_bytes=file_bytes)
-    
-    if not match_result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No matching player found"
-        )
-    
-    return match_result 

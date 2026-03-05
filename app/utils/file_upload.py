@@ -46,7 +46,8 @@ def save_image_file(file: UploadFile, subdirectory: str = "players", content: Op
             buffer.write(file_content)
         
         return str(file_path)
-    
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error saving file: {str(e)}")
 
@@ -65,12 +66,17 @@ def get_file_url(file_path: str) -> str:
     """Convert file path to URL"""
     if not file_path:
         return ""
-    
-    # Remove the uploads/ prefix if present
-    if file_path.startswith("uploads/"):
-        file_path = file_path[8:]  # Remove "uploads/"
-    
-    return f"/uploads/{file_path}"
+
+    path = Path(file_path)
+    parts = list(path.parts)
+
+    if "uploads" in parts:
+        rel_parts = parts[parts.index("uploads") + 1 :]
+    else:
+        rel_parts = parts
+
+    relative_path = "/".join(part for part in rel_parts if part)
+    return f"/uploads/{relative_path}" if relative_path else "/uploads"
 
 def validate_image_file(file: UploadFile) -> bool:
     """Validate that the uploaded file is a valid image"""

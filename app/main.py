@@ -1,15 +1,16 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 import os
 from pathlib import Path
 
 from app.database import engine, Base
 from app.routers import auth_router, teams_router, subteams_router, players_router, users_router
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Keep schema ownership with Alembic by default.
+if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":
+    Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Team Tournament API",
@@ -82,11 +83,17 @@ def api_info():
 # Error handlers
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
-    return {"error": "Not found", "message": "The requested resource was not found"}
+    return JSONResponse(
+        status_code=404,
+        content={"error": "Not found", "message": "The requested resource was not found"},
+    )
 
 @app.exception_handler(500)
 async def internal_error_handler(request, exc):
-    return {"error": "Internal server error", "message": "An unexpected error occurred"}
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal server error", "message": "An unexpected error occurred"},
+    )
 
 if __name__ == "__main__":
     import uvicorn
