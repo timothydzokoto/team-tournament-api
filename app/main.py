@@ -12,6 +12,17 @@ from app.routers import auth_router, teams_router, subteams_router, players_rout
 if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":
     Base.metadata.create_all(bind=engine)
 
+
+def _parse_cors_origins() -> list[str]:
+    """Parse comma-separated CORS origins from env."""
+    raw = os.getenv("CORS_ORIGINS", "*").strip()
+    if not raw:
+        return ["*"]
+    if raw == "*":
+        return ["*"]
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
 app = FastAPI(
     title="Team Tournament API",
     description="A comprehensive API for managing teams, subteams, and players with face recognition capabilities",
@@ -21,10 +32,11 @@ app = FastAPI(
 )
 
 # Add CORS middleware
+cors_origins = _parse_cors_origins()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_credentials=False if cors_origins == ["*"] else True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

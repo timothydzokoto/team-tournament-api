@@ -88,6 +88,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 # File Uploads
 UPLOAD_DIR=uploads
 MAX_FILE_SIZE=5242880
+
+# CORS (comma-separated; use * for open dev mode)
+CORS_ORIGINS=http://localhost:8081,http://localhost:19006,http://192.168.1.20:8081
 ```
 
 4. Apply database migrations.
@@ -103,6 +106,61 @@ uvicorn app.main:app --reload
 ```
 
 API base URL: `http://localhost:8000`
+
+## React Native Integration
+
+Use a reachable API host, not `localhost`, when testing on devices/emulators.
+
+- Android emulator: `http://10.0.2.2:8000`
+- iOS simulator: `http://127.0.0.1:8000`
+- Physical phone on same Wi-Fi: `http://<YOUR_PC_LAN_IP>:8000` (for example `http://192.168.1.20:8000`)
+
+If you use Expo web or a web frontend, set `CORS_ORIGINS` in `.env` to your app origin(s), then restart the API server.
+
+Example React Native API client:
+
+```ts
+// api/client.ts
+const API_BASE_URL = "http://10.0.2.2:8000/api/v1"; // change per platform/device
+
+let accessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init.headers as Record<string, string>),
+  };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(`HTTP ${res.status}: ${message}`);
+  }
+  return res.json() as Promise<T>;
+}
+```
+
+Login flow example:
+
+```ts
+type LoginResponse = { access_token: string; token_type: string };
+
+const login = await apiFetch<LoginResponse>("/auth/login", {
+  method: "POST",
+  body: JSON.stringify({ username: "admin", password: "securepassword" }),
+});
+
+setAccessToken(login.access_token);
+const teams = await apiFetch("/teams");
+```
 
 ## API Documentation
 
