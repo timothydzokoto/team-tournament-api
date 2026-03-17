@@ -271,7 +271,7 @@ docker run -p 8000:8000 team-tournament-api
 - Run tests:
 
 ```bash
-pytest
+pytest tests/test_api_endpoints.py
 ```
 
 - Optional manual smoke test script:
@@ -279,6 +279,18 @@ pytest
 ```bash
 python test_api.py
 ```
+
+## Backend Readiness For Mobile
+
+Before connecting an Expo app to this API, verify these backend conditions:
+
+- `SECRET_KEY` is set to a strong non-default value.
+- `CORS_ORIGINS` includes your Expo web origin when testing on web.
+- The API is reachable from emulator, simulator, and physical devices using the correct host.
+- `/health` reports database status correctly and exposes service capability info.
+- Image uploads respect `MAX_FILE_SIZE` and reject invalid images with `400`.
+- Face endpoints are treated as optional and return `503` when `face-recognition` is not installed.
+- The automated API test suite passes before frontend integration starts.
 
 ## Production Notes
 

@@ -7,6 +7,8 @@ from pathlib import Path
 
 from app.database import engine, Base
 from app.routers import auth_router, teams_router, subteams_router, players_router, users_router
+from app.utils.face_recognition import is_face_recognition_available
+from app.cache import redis_client
 
 # Keep schema ownership with Alembic by default.
 if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":
@@ -66,7 +68,31 @@ def read_root():
 @app.get("/health")
 def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "message": "API is running"}
+    db_status = "healthy"
+    redis_status = "healthy"
+
+    try:
+        with engine.connect() as connection:
+            connection.exec_driver_sql("SELECT 1")
+    except Exception:
+        db_status = "unhealthy"
+
+    try:
+        redis_client.ping()
+    except Exception:
+        redis_status = "unavailable"
+
+    overall_status = "healthy" if db_status == "healthy" else "degraded"
+    return {
+        "status": overall_status,
+        "message": "API is running",
+        "services": {
+            "database": db_status,
+            "redis": redis_status,
+            "face_recognition": "available" if is_face_recognition_available() else "unavailable",
+            "uploads_dir": str(uploads_dir.resolve()),
+        },
+    }
 
 @app.get("/api-info")
 def api_info():
@@ -83,6 +109,12 @@ def api_info():
             "File uploads",
             "Database migrations with Alembic"
         ],
+        "mobile_readiness": {
+            "auth": "JWT bearer token",
+            "base_path": "/api/v1",
+            "uploads_base_path": "/uploads",
+            "face_recognition": "optional dependency",
+        },
         "endpoints": {
             "auth": "/api/v1/auth",
             "teams": "/api/v1/teams",
@@ -95,9 +127,14 @@ def api_info():
 # Error handlers
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
+    detail = getattr(exc, "detail", None)
     return JSONResponse(
         status_code=404,
-        content={"error": "Not found", "message": "The requested resource was not found"},
+        content={
+            "error": "Not found",
+            "message": detail or "The requested resource was not found",
+            "detail": detail or "The requested resource was not found",
+        },
     )
 
 @app.exception_handler(500)

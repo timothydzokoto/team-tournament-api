@@ -70,7 +70,24 @@ Expected final output includes:
 
 - `All tests completed successfully!`
 
-## 5. Manual API Test (PowerShell)
+## 5. Automated API Test Suite
+
+Run the repeatable backend test suite:
+
+```powershell
+pytest tests/test_api_endpoints.py
+```
+
+This validates:
+
+- health response shape
+- auth register/login/me
+- protected route behavior
+- team/subteam/player core CRUD flow
+- invalid subteam rejection
+- invalid image rejection for face routes
+
+## 6. Manual API Test (PowerShell)
 
 Use this when you want to test endpoint behavior directly.
 
@@ -155,7 +172,7 @@ Invoke-RestMethod -Method Get -Uri "$base/subteams" -Headers $headers
 Invoke-RestMethod -Method Get -Uri "$base/players" -Headers $headers
 ```
 
-## 6. Face Endpoint Testing (Optional)
+## 7. Face Endpoint Testing (Optional)
 
 Face routes require the optional dependency.
 
@@ -192,17 +209,12 @@ Expected:
 - On match: `player_id`, `player_name`, `confidence`
 - On no match: HTTP `404` with `No matching player found`
 
-## 7. Basic Negative Tests
+## 8. Basic Negative Tests
 
 - Call protected route without token -> expect `401`
 - Register existing username/email -> expect `400`
 - Create player with invalid `subteam_id` -> expect `404`
 - Upload non-image file to face route -> expect `400`/validation failure
-
-## 8. Current Gaps
-
-- `pytest` is listed in dependencies, but this repo currently relies on `test_api.py` for end-to-end smoke validation.
-- If you need CI-grade automated tests, add `pytest` + FastAPI `TestClient` tests under a dedicated `tests/` directory.
 
 ## 9. Troubleshooting
 
@@ -222,6 +234,7 @@ Expected:
 The application passes this test guide when:
 
 - Health endpoint returns `200`
+- `pytest tests/test_api_endpoints.py` passes
 - Auth register/login/me flows work
 - Team/subteam/player CRUD create+read/list work
 - Face upload/match behaves correctly (or returns controlled `503` when dependency is absent)

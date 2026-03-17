@@ -7,7 +7,7 @@ from app.crud.player import player_crud
 from app.crud.subteam import subteam_crud
 from app.utils.auth import get_current_active_user
 from app.utils.face_recognition import is_face_recognition_available
-from app.utils.file_upload import save_image_file, get_file_url
+from app.utils.file_upload import save_image_file, get_file_url, validate_image_bytes
 
 router = APIRouter(prefix="/players", tags=["players"])
 
@@ -57,6 +57,11 @@ def match_player_face(
 
     # Read file bytes
     file_bytes = file.file.read()
+    if not validate_image_bytes(file_bytes):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid image file"
+        )
     
     # Find matching player
     match_result = player_crud.find_player_by_face(db=db, face_image_bytes=file_bytes)
@@ -173,8 +178,15 @@ def upload_player_face(
     # Save the image file
     try:
         file_bytes = file.file.read()
+        if not validate_image_bytes(file_bytes):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid image file"
+            )
         file_path = save_image_file(file, "players", content=file_bytes)
         file_url = get_file_url(file_path)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
