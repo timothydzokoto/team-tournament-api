@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import List, Optional
 from app.database import get_db
 from app.schemas.tournament import TournamentCreate, TournamentUpdate, TournamentResponse, TournamentStatus
 from app.schemas.match import MatchResponse, TeamStanding
