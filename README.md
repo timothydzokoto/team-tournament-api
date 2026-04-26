@@ -266,6 +266,43 @@ docker build -t team-tournament-api .
 docker run -p 8000:8000 team-tournament-api
 ```
 
+Or use Docker Compose for local frontend integration:
+
+```bash
+docker compose up --build
+```
+
+This compose setup:
+
+- runs the FastAPI backend on `http://localhost:8000`
+- runs Redis on `localhost:6379`
+- persists the SQLite database in `./data`
+- persists uploaded files in `./uploads`
+- applies Alembic migrations automatically on container start
+
+## Expo Frontend With Docker Backend
+
+In the Expo app at `c:\Users\Tim\Documents\dev\reactnative\my-expo-app`, create a `.env` file from `.env.example` and set the backend origin for your device type:
+
+```env
+# iOS simulator
+EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+
+# Android emulator
+# EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:8000
+
+# Physical device on same Wi-Fi
+# EXPO_PUBLIC_API_BASE_URL=http://YOUR_PC_LAN_IP:8000
+```
+
+Then start Expo:
+
+```bash
+pnpm start
+```
+
+If you use Expo web, keep `CORS_ORIGINS` configured on the backend for the web origin and rebuild/restart the API container after env changes.
+
 ## Testing
 
 - Run tests:

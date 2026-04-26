@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from typing import List, Optional
 from app.models.team import Team
 from app.schemas.team import TeamCreate, TeamUpdate
@@ -66,6 +66,12 @@ class TeamCRUD:
         cache_set(cache_key, teams, 300)
         return teams
     
+    def count_multi(self, db: Session, search: Optional[str] = None) -> int:
+        query = db.query(func.count(Team.id))
+        if search:
+            query = query.filter(Team.name.ilike(f"%{search}%"))
+        return query.scalar()
+
     def update(self, db: Session, team_id: int, team_update: TeamUpdate) -> Optional[Team]:
         """Update a team"""
         db_team = self.get(db, team_id, use_cache=False)

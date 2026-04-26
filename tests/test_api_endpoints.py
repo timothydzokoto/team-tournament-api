@@ -155,6 +155,21 @@ def test_face_match_rejects_invalid_image(client):
         assert response.json()["detail"] == "Invalid image file"
 
 
+def test_face_match_returns_422_when_no_face_detected(client):
+    headers = register_and_login(client)
+    image_bytes = make_image_bytes()
+
+    response = client.post(
+        "/api/v1/players/face-match",
+        headers=headers,
+        files={"file": ("blank.jpg", image_bytes, "image/jpeg")},
+    )
+
+    assert response.status_code in {422, 503}
+    if response.status_code == 422:
+        assert response.json()["detail"] == "No face detected in the image"
+
+
 def test_upload_face_rejects_invalid_image(client):
     headers = register_and_login(client)
     ids = create_team_subteam_player(client, headers)
@@ -168,6 +183,22 @@ def test_upload_face_rejects_invalid_image(client):
     assert response.status_code in {400, 503}
 
 
+def test_upload_face_returns_422_when_no_face_detected(client):
+    headers = register_and_login(client)
+    ids = create_team_subteam_player(client, headers)
+    image_bytes = make_image_bytes()
+
+    response = client.post(
+        f"/api/v1/players/{ids['player_id']}/upload-face",
+        headers=headers,
+        files={"file": ("blank.jpg", image_bytes, "image/jpeg")},
+    )
+
+    assert response.status_code in {422, 503}
+    if response.status_code == 422:
+        assert response.json()["detail"] == "No face detected in the image"
+
+
 def test_upload_face_returns_503_when_face_dependency_unavailable(client):
     headers = register_and_login(client)
     ids = create_team_subteam_player(client, headers)
@@ -179,4 +210,4 @@ def test_upload_face_returns_503_when_face_dependency_unavailable(client):
         files={"file": ("face.jpg", image_bytes, "image/jpeg")},
     )
 
-    assert response.status_code in {200, 503, 400}
+    assert response.status_code in {200, 503, 422}

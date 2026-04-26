@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from app.database import engine, Base
-from app.routers import auth_router, teams_router, subteams_router, players_router, users_router
+from app.routers import auth_router, teams_router, subteams_router, players_router, users_router, tournaments_router, matches_router, player_match_stats_router
 from app.utils.face_recognition import is_face_recognition_available
 from app.cache import redis_client
 
@@ -49,6 +49,9 @@ app.include_router(teams_router, prefix="/api/v1")
 app.include_router(subteams_router, prefix="/api/v1")
 app.include_router(players_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
+app.include_router(tournaments_router, prefix="/api/v1")
+app.include_router(matches_router, prefix="/api/v1")
+app.include_router(player_match_stats_router, prefix="/api/v1")
 
 # Mount static files for uploads
 uploads_dir = Path("uploads")
@@ -120,7 +123,9 @@ def api_info():
             "teams": "/api/v1/teams",
             "subteams": "/api/v1/subteams",
             "players": "/api/v1/players",
-            "users": "/api/v1/users"
+            "users": "/api/v1/users",
+            "tournaments": "/api/v1/tournaments",
+            "matches": "/api/v1/matches",
         }
     }
 

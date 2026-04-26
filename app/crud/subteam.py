@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from app.models.subteam import SubTeam
 from app.schemas.subteam import SubTeamCreate, SubTeamUpdate
@@ -37,15 +38,15 @@ class SubTeamCRUD:
             cache_set(cache_key, subteam, 300)  # Cache for 5 minutes
         return subteam
     
-    def get_by_team(self, db: Session, team_id: int) -> List[SubTeam]:
+    def get_by_team(self, db: Session, team_id: int, skip: int = 0, limit: int = 100) -> List[SubTeam]:
         """Get all subteams for a team"""
         version = cache_get_namespace_version(self.LIST_NAMESPACE)
-        cache_key = f"subteams:list:v{version}:team:{team_id}"
+        cache_key = f"subteams:list:v{version}:skip:{skip}:limit:{limit}:team:{team_id}"
         cached = cache_get(cache_key)
         if isinstance(cached, list):
             return [SubTeam(**item) for item in cached if isinstance(item, dict)]
 
-        subteams = db.query(SubTeam).filter(SubTeam.team_id == team_id).all()
+        subteams = db.query(SubTeam).filter(SubTeam.team_id == team_id).offset(skip).limit(limit).all()
         cache_set(cache_key, subteams, 300)
         return subteams
     
@@ -81,6 +82,14 @@ class SubTeamCRUD:
         cache_set(cache_key, subteams, 300)
         return subteams
     
+    def count_multi(self, db: Session, team_id: Optional[int] = None, search: Optional[str] = None) -> int:
+        query = db.query(func.count(SubTeam.id))
+        if team_id:
+            query = query.filter(SubTeam.team_id == team_id)
+        if search:
+            query = query.filter(SubTeam.name.ilike(f"%{search}%"))
+        return query.scalar()
+
     def update(self, db: Session, subteam_id: int, subteam_update: SubTeamUpdate) -> Optional[SubTeam]:
         """Update a subteam"""
         db_subteam = self.get(db, subteam_id, use_cache=False)

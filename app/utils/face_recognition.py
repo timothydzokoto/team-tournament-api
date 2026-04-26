@@ -8,6 +8,22 @@ from typing import List, Optional, Tuple
 import io
 
 
+class FaceRecognitionError(Exception):
+    """Base exception for face-recognition analysis failures."""
+
+
+class NoFaceDetectedError(FaceRecognitionError):
+    """Raised when an image contains no detectable face."""
+
+
+class MultipleFacesDetectedError(FaceRecognitionError):
+    """Raised when an image contains more than one face."""
+
+
+class FaceImageDecodeError(FaceRecognitionError):
+    """Raised when an image cannot be decoded for face analysis."""
+
+
 def is_face_recognition_available() -> bool:
     """Return whether the optional face_recognition dependency is installed."""
     return face_recognition is not None
@@ -30,11 +46,20 @@ def encode_face_from_bytes(image_bytes: bytes) -> Optional[np.ndarray]:
         return None
     try:
         image = face_recognition.load_image_file(io.BytesIO(image_bytes))
-        encodings = face_recognition.face_encodings(image)
-        return encodings[0] if encodings else None
+        face_locations = face_recognition.face_locations(image)
+        if not face_locations:
+            raise NoFaceDetectedError("No face detected in the image")
+        if len(face_locations) > 1:
+            raise MultipleFacesDetectedError("Multiple faces detected in the image")
+
+        encodings = face_recognition.face_encodings(image, known_face_locations=face_locations)
+        if not encodings:
+            raise NoFaceDetectedError("No face detected in the image")
+        return encodings[0]
+    except FaceRecognitionError:
+        raise
     except Exception as e:
-        print(f"Error encoding face from bytes: {e}")
-        return None
+        raise FaceImageDecodeError(f"Error encoding face from bytes: {e}") from e
 
 def compare_faces(known_encoding: np.ndarray, unknown_encoding: np.ndarray, tolerance: float = 0.6) -> bool:
     """Compare two face encodings"""
@@ -101,5 +126,5 @@ def validate_image(image_bytes: bytes) -> bool:
     try:
         encoding = encode_face_from_bytes(image_bytes)
         return encoding is not None
-    except Exception:
-        return False 
+    except FaceRecognitionError:
+        return False

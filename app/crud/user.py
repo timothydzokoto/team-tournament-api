@@ -1,23 +1,38 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user import UserCreate, UserRegister, UserUpdate
 from app.utils.auth import get_password_hash
 
 class UserCRUD:
     def create(self, db: Session, user: UserCreate) -> User:
-        """Create a new user with hashed password"""
+        """Create a new user with hashed password (admin path — role honoured)."""
         hashed_password = get_password_hash(user.password)
         db_user = User(
             username=user.username,
             email=user.email,
-            hashed_password=hashed_password
+            hashed_password=hashed_password,
+            role=user.role.value if hasattr(user.role, "value") else user.role,
         )
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
         return db_user
     
+    def register(self, db: Session, user: UserRegister) -> User:
+        """Create a user from public registration — role is always coach."""
+        hashed_password = get_password_hash(user.password)
+        db_user = User(
+            username=user.username,
+            email=user.email,
+            hashed_password=hashed_password,
+            role="coach",
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+
     def get(self, db: Session, user_id: int) -> Optional[User]:
         """Get a user by ID"""
         return db.query(User).filter(User.id == user_id).first()
