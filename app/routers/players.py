@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import List, Optional
 from app.database import get_db
 from app.schemas.player import PlayerCreate, PlayerUpdate, PlayerResponse, PlayerFaceMatch
 from app.schemas.pagination import Page, make_page
